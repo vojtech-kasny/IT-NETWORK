@@ -1,2 +1,2 @@
 # IT-NETWORK
-Repo used for code demonstration
+Repo used primarily for code demonstration
