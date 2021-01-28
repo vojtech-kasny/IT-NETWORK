@@ -15,7 +15,12 @@ Add-PSITModulePath $ModulesPath
 (Get-ChildItem $ModulesPath -Directory -Exclude 'support').Name | Import-PSITModule
 
 # Load help file
-$PsItTools.Help = Import-PowerShellDataFile (Join-Path $PSScriptRoot 'help.psd1')
+try {
+    $PsItTools.Help = Import-PowerShellDataFile (Join-Path $PSScriptRoot 'help.psd1') -ErrorAction Stop
+}
+catch {
+    Write-PSITWarning "Unable to load help.psd1 file"
+}
 
 # Set location to user home
 Set-Location $HOME
