@@ -1,6 +1,6 @@
 # Import support module a config file
 try {
-    Import-Module (Join-Path $PSScriptRoot '..\modules\support\support.psm1' -Resolve) -Force -DisableNameChecking -ErrorAction Stop
+    Import-Module (Join-Path $PSScriptRoot '..\modules\support\support.psd1' -Resolve) -Force -DisableNameChecking -ErrorAction Stop
     $global:PsItTools = Import-PowerShellDataFile (Join-Path $PSScriptRoot 'config.psd1' -Resolve)
     'Support module loaded successfully', 'Config file loaded successfully' | Write-PSITDebug
 }
@@ -12,7 +12,7 @@ catch {
 $ModulesPath = Join-Path $PSScriptRoot '..\modules' -Resolve
 $PsItTools.ModulePath = $ModulesPath
 Add-PSITModulePath $ModulesPath
-(Get-ChildItem $ModulesPath -Directory -Exclude 'support').Name | Import-PSITModule
+(Get-ChildItem $ModulesPath -Directory -Exclude 'support').Name | Where-Object {$_} | Import-PSITModule
 
 # Load help file
 try {

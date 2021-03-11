@@ -188,7 +188,11 @@ function Show-PSITHelp {
         'module' {
             $PsItTools.Help.Module
             Get-ChildItem $PsItTools.ModulePath -Directory -Exclude 'support' | ForEach-Object {
-                Write-PSITInfo (" > {0}" -f $_.name)
+                $ModuleInfo = Get-Module -Name $_.Name
+                Write-Host (" > {0} ({1})" -f $ModuleInfo.Name, $ModuleInfo.Version) -ForegroundColor Yellow
+                (Get-Command -Module $ModuleInfo.Name).Name | ForEach-Object {
+                    Write-Host ('     {0}' -f $_) -ForegroundColor Magenta
+                }
             }
         }
         'about' {
@@ -205,5 +209,3 @@ function Show-PSITHelp {
 }
 
 New-Alias -Name psithelp -Value Show-PSITHelp
-
-Export-ModuleMember -Function '*' -Alias '*'
