@@ -646,10 +646,25 @@ function New-PSITMessageBox {
     }
 }
 function Show-PSITGuiLog {
+    <#
+    .SYNOPSIS
+        Shows GUI popup
+    .DESCRIPTION
+        The Show-PSITGuiLog cmdlet utilizes New-PSITMessageBox function to display popup message
+    .EXAMPLE
+        Show-PSITGuiLog -Message 'Hello world'
+    .EXAMPLE
+        Show-PSITGuiLog -Message 'ERROR: Hello world' -Type error -Timeout 15
+    .INPUTS
+        System.String, System.Int
+    .OUTPUTS
+        none
+    #>
     param (
         [ValidateSet('error','warning','info','success')]
         $Type = 'info',
-        [parameter(mandatory)]$Message
+        [parameter(mandatory)]$Message,
+        [int]$Timeout = 5
     )
     switch ($Type){
         'error' {
@@ -669,7 +684,7 @@ function Show-PSITGuiLog {
             $TitleBack = 'darkgreen'
         }
     }
-    New-PSITMessageBox -Content $Message -Title $Type.ToUpper() -TitleBackground $TitleBack -ContentTextForeground $TextColor -CornerRadius 3 -TimeOut 10
+    New-PSITMessageBox -Content $Message -Title $Type.ToUpper() -TitleBackground $TitleBack -ContentTextForeground $TextColor -CornerRadius 3 -TimeOut $Timeout
 }
 workflow Invoke-PSITParallel {
     <#
