@@ -24,6 +24,7 @@ function Get-PSITSystemInfo {
         $ComputerSystem = Get-WmiObject win32_ComputerSystem -ComputerName $ComputerName -Credential $Credential
         $OperatingSystem = Get-WmiObject win32_OperatingSystem -ComputerName $ComputerName -Credential $Credential
         $Bios = Get-WmiObject win32_Bios -ComputerName $ComputerName -Credential $Credential
+        $SystemDisk = Get-WmiObject win32_LogicalDisk -ComputerName $ComputerName -Credential $Credential -Filter "DeviceID = '$env:SystemDrive'"
     }
     catch {
         throw $_.exception.message
@@ -36,6 +37,15 @@ function Get-PSITSystemInfo {
         "RAM($DisplayUnits)" = switch ($DisplayUnits) {
             { $_ -in 'GB', 'MB', 'KB' } { $ComputerSystem.TotalPhysicalMemory / "1${DisplayUnits}" -as [int] }
             default { $ComputerSystem.TotalPhysicalMemory }
+        }
+        SystemDiskLetter = $env:SystemDrive
+        "SystemDiskSize($DisplayUnits)" = switch ($DisplayUnits) {
+            { $_ -in 'GB', 'MB', 'KB' } { $SystemDisk.Size / "1${DisplayUnits}" -as [int] }
+            default { $SystemDisk.Size }
+        }
+        "SystemDiskFreeSpace($DisplayUnits)" = switch ($DisplayUnits) {
+            { $_ -in 'GB', 'MB', 'KB' } { $SystemDisk.FreeSpace / "1${DisplayUnits}" -as [int] }
+            default { $SystemDisk.FreeSpace }
         }
         NumberOfProcessors   = $ComputerSystem.NumberOfProcessors
         NumberOfCores        = $ComputerSystem.NumberOfLogicalProcessors
@@ -635,7 +645,6 @@ function New-PSITMessageBox {
         if ($PSBoundParameters.ReturnButton) { $WPFMessageBoxOutput }
     }
 }
-
 function Show-PSITGuiLog {
     param (
         [ValidateSet('error','warning','info','success')]
@@ -652,7 +661,7 @@ function Show-PSITGuiLog {
             $TitleBack = 'darkorange'
         }
         'info' {
-            $TextColor = 'blue'
+            $TextColor = 'black'
             $TitleBack = 'lightblue'
         }
         'success' {
@@ -660,5 +669,36 @@ function Show-PSITGuiLog {
             $TitleBack = 'darkgreen'
         }
     }
-    New-PSITMessageBox -Content $Message -Title $Type.ToUpper() -TitleBackground $TitleBack -ContentTextForeground $TextColor -CornerRadius 3
+    New-PSITMessageBox -Content $Message -Title $Type.ToUpper() -TitleBackground $TitleBack -ContentTextForeground $TextColor -CornerRadius 3 -TimeOut 10
+}
+workflow Invoke-PSITParallel {
+    <#
+    .SYNOPSIS
+        Invokes multiple script blocks in parallel
+    .DESCRIPTION
+        The Invoke-PSITParallel invokes one or multiple script blocks on local or remote machine(s) in parallel using Windows Workflow Foundation framework
+    .EXAMPLE
+        Invoke-PSITParallel {Get-Host}
+    .EXAMPLE
+        Invoke-PSITParallel {Get-Host} -PSComputerName localhost,127.0.0.1
+    .EXAMPLE
+        Invoke-PSITParallel {Get-Host},{$ENV:ComputerName} -PSComputerName localhost,127.0.0.1
+    .INPUTS
+        ScriptBlock, ScriptBlock[]
+    .OUTPUTS
+        Object
+    .NOTES
+        PowerShell worfklow concepts: https://docs.microsoft.com/en-us/system-center/sma/overview-powershell-workflows?view=sc-sma-2019
+    #>
+    param (
+        [parameter(Mandatory)][scriptblock[]]$ScriptBlock
+    )
+    foreach -Parallel ($ScriptCall in $ScriptBlock){
+        $Result = InlineScript {
+            Write-Verbose "Calling '$using:ScriptCall'"
+            $ScriptCall = [scriptblock]::Create($using:ScriptCall)
+            Invoke-Command -ScriptBlock $ScriptCall
+        }
+        Write-Output $Result
+    }
 }
